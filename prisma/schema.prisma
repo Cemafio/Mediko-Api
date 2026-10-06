@@ -44,9 +44,8 @@ model PharmacyMedicine {
 model Medicine {
   id          String   @id @default(cuid())
   name        String
+  dosage     String?
   description String?
-  price       Float
-  quantity    Int
   pharmacy    PharmacyMedicine []
   publishedAt DateTime @default(now())
   updatedAt   DateTime @updatedAt
