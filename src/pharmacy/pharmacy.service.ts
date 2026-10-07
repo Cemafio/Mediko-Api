@@ -19,12 +19,19 @@ export class PharmacyService {
     });
   }
 
-  async findOne(id: string){
-    return this.prisma.pharmacy.findUnique(
-      {
-        where: { id }
-      }
-    )
+  async findOne(id: string) {
+    return this.prisma.pharmacy.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        medicines: {
+          include: {
+            medicine: true,
+          },
+        },
+      },
+    });
   }
   
   async update(id: string, updatePharmacyDto: UpdatePharmacyDto) {

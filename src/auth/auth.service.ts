@@ -15,13 +15,21 @@ export class AuthService {
   async signup(signupDto: SignupDto) {
     const hashedPassword = await bcrypt.hash(signupDto.password, 10);
 
-    return this.prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
         email: signupDto.email,
         password: hashedPassword,
         name: signupDto.name,
       },
     });
+
+    return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        createdAt: user.createdAt,
+    };
   }
 
   async signin(signinDto: SigninDto) {
