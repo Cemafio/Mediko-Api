@@ -28,16 +28,31 @@ model User {
 } 
 
 model Pharmacy {
-  id        String     @id @default(cuid())
-  name      String
-  address   String
-  phone     String
-  email     String
-  latitude  Float?
-  longitude Float?
-  medicines PharmacyMedicine []
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id           String             @id @default(cuid())
+  name         String
+  address      String
+  city         String
+  phone        String
+  email        String
+  latitude     Float?
+  longitude    Float?
+  openingHours OpeningHour[]
+  medicines    PharmacyMedicine[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+}
+
+model OpeningHour {
+  id         String   @id @default(cuid())
+  pharmacyId String
+  pharmacy   Pharmacy @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+
+  dayOfWeek  Int      // 0 = dimanche, 1 = lundi ... 6 = samedi
+  opensAt    String   // "08:00"
+  closesAt   String   // "19:00" (si closesAt <= opensAt, la plage passe minuit)
+
+  @@unique([pharmacyId, dayOfWeek, opensAt])
+  @@index([pharmacyId])
 }
 
 model PharmacyMedicine {

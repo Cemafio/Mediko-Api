@@ -1,8 +1,4 @@
-export class UpdatePharmacyDto {
-  name?: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  latitude?: number;
-  longitude?: number;
-}
+import { PartialType } from '@nestjs/mapped-types';
+import { CreatePharmacyDto } from './create-pharmacy.dto';
+
+export class UpdatePharmacyDto extends PartialType(CreatePharmacyDto) {}

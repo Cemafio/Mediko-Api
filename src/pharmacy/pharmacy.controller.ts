@@ -1,23 +1,28 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { PharmacyService } from './pharmacy.service';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { CreatePharmacyDto } from './dto/create-pharmacy.dto';
-import { get } from 'node:http';
+import { PharmacyService } from './pharmacy.service';
 import { UpdatePharmacyDto } from './dto/update-pharmacies';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard/jwt-auth.guard';
 
 @Controller('pharmacies')
-// @UseGuards(JwtAuthGuard)
 export class PharmacyController {
   constructor(private readonly pharmacyService: PharmacyService) {}
+
+  @Post()
+  create(@Body() dto: CreatePharmacyDto) {
+    return this.pharmacyService.create(dto);
+  }
 
   @Get()
   findAll() {
     return this.pharmacyService.findAll();
-  }
-
-  @Post()
-  create(@Body() createPharmacyDto: CreatePharmacyDto) {
-    return this.pharmacyService.create(createPharmacyDto);
   }
 
   @Get(':id')
@@ -26,11 +31,8 @@ export class PharmacyController {
   }
 
   @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updatePharmacyDto: UpdatePharmacyDto,
-  ) {
-    return this.pharmacyService.update(id, updatePharmacyDto);
+  update(@Param('id') id: string, @Body() dto: UpdatePharmacyDto) {
+    return this.pharmacyService.update(id, dto);
   }
 
   @Delete(':id')
