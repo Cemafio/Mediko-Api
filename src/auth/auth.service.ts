@@ -100,6 +100,9 @@ export class AuthService {
     }
 
     async signupPharmacie(dtoPharma:SignupPharmaDto){
+        const { openingHours, address, city, phone, email,name, } = dtoPharma;
+        validateHours(openingHours);
+        
         const hashedPassword = await bcrypt.hash(dtoPharma.password, 10);
 
         const user = await this.prisma.user.create({
@@ -109,9 +112,6 @@ export class AuthService {
                 name: dtoPharma.name,
             },
         });
-
-        const { openingHours, address, city, phone, email,name, } = dtoPharma;
-        validateHours(openingHours);
 
         const pharma = await this.prisma.pharmacy.create({
             data: {
