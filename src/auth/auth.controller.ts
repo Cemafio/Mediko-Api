@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup/signup.dto';
 import { SigninDto } from './dto/signin.dto/signin.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard/jwt-auth.guard';
+import { SignupPharmaDto } from './dto/signup/signupPharma.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -18,9 +19,20 @@ export class AuthController {
         return this.authService.signin(signinDto);
     }
 
-    @Get('profile')
-    @UseGuards(JwtAuthGuard)
-    profile(@Req() req: any) {
-        return req.user;
-    }
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  profile(@Req() req: any) {
+      return req.user;
+  }
+
+  @Get('users')
+  @UseGuards(JwtAuthGuard)
+  getAllUsers(@Req() req: any) {
+      return this.authService.getAllProfiles();
+  }
+
+  @Post('signupPharmacy')
+  signupPharma(@Body() signupPharmaDto: SignupPharmaDto){
+    return this.authService.signupPharmacie(signupPharmaDto)
+  }
 }

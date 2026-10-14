@@ -1,9 +1,29 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignupDto } from './dto/signup/signup.dto';
 import * as bcrypt from 'bcrypt';
 import { SigninDto } from './dto/signin.dto/signin.dto';
 import { JwtService } from '@nestjs/jwt';
+import { PharmacyService } from 'src/pharmacy/pharmacy.service';
+import { CreatePharmacyDto } from 'src/pharmacy/dto/create-pharmacy.dto';
+import { OpeningHourDto } from 'src/pharmacy/dto/opening-hour.dto';
+import { SignupPharmaDto } from './dto/signup/signupPharma.dto';
+
+function validateHours(hours: OpeningHourDto[] = []) {
+  for (const h of hours) {
+    if (h.opensAt === h.closesAt) {
+      throw new BadRequestException(
+        `Jour ${h.dayOfWeek} : l'ouverture et la fermeture doivent être différentes.`,
+      );
+    }
+  }
+
+  // Deux plages identiques le même jour violeraient la contrainte unique
+  const keys = hours.map((h) => `${h.dayOfWeek}-${h.opensAt}`);
+  if (new Set(keys).size !== keys.length) {
+    throw new BadRequestException('Plages horaires en double.');
+  }
+}
 
 @Injectable()
 export class AuthService {
@@ -63,5 +83,59 @@ export class AuthService {
         return {
             access_token: accessToken,
         };
+    }
+
+    async getAllProfiles() {
+        const users = await this.prisma.user.findMany({
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                role: true,
+                createdAt: true,
+            },
+        });
+
+        return users;
+    }
+
+    async signupPharmacie(dtoPharma:SignupPharmaDto){
+        const hashedPassword = await bcrypt.hash(dtoPharma.password, 10);
+
+        const user = await this.prisma.user.create({
+            data: {
+                email: dtoPharma.email,
+                password: hashedPassword,
+                name: dtoPharma.name,
+            },
+        });
+
+        const { openingHours, address, city, phone, email,name, } = dtoPharma;
+        validateHours(openingHours);
+
+        const pharma = await this.prisma.pharmacy.create({
+            data: {
+                address,
+                city,
+                email,
+                name,
+                phone,
+                openingHours: openingHours?.length
+                ? { create: openingHours }
+                : undefined,
+            },
+            include: { openingHours: true },
+        }); 
+        
+        return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            address: pharma.address,
+            phone: pharma.phone,
+            city: pharma.city,
+            createdAt: user.createdAt,
+        };   
     }
 }

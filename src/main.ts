@@ -12,7 +12,13 @@ async function bootstrap() {
       transform: true,            // convertit en instance de classe
     }),
   );
+  
+  app.enableCors({
+    origin: 'http://localhost:3000', // URL de ton frontend Next.js
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3005);
 }
 bootstrap();
