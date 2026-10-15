@@ -34,7 +34,7 @@ model Pharmacy {
   address      String
   city         String
   phone        String
-  email        String
+  email        String             @unique
   latitude     Float?
   longitude    Float?
   openingHours OpeningHour[]
