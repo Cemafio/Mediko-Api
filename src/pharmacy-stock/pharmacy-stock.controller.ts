@@ -13,6 +13,7 @@ import { PharmacyStockService } from './pharmacy-stock.service';
 import { CreateStockItemDto, UpdateStockItemDto } from './dto/pharmacy-stock.dto';
 import { PharmacyGuard } from 'src/auth/pharmacy.guard';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard/jwt-auth.guard';
+import { Role } from 'generated/prisma/enums';
 
 @UseGuards(JwtAuthGuard,PharmacyGuard)
 @Controller('pharmacy/stock')

@@ -27,13 +27,13 @@ export class AuthController {
   }
 
   @Get('users')
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   getAllUsers(@Req() req: any) {
       return this.authService.getAllProfiles();
   }
 
   @Patch("users/:id")
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   updateUser(
     @Param("id") id: string,
     @Body() updateUserDto: UpdateUserDto,

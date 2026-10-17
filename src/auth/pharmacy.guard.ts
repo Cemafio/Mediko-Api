@@ -20,9 +20,9 @@ export class PharmacyGuard implements CanActivate {
 
     const user = await this.prisma.user.findUnique({ where: { email } });
 
-    // if (!user || user.role !== 'PHARMACY') {
-    //   throw new ForbiddenException('Ce compte n’est pas un compte pharmacie.');
-    // }    
+    if (!user || user.role !== 'PHARMACIST') {
+      throw new ForbiddenException('Ce compte n’est pas un compte pharmacie.');
+    }    
 
     // if (user.status !== 'ACTIVE') {
     //   throw new ForbiddenException('Votre compte est en attente de validation.');
