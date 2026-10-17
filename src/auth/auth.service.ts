@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignupDto } from './dto/signup/signup.dto';
 import * as bcrypt from 'bcrypt';
@@ -8,21 +8,22 @@ import { PharmacyService } from 'src/pharmacy/pharmacy.service';
 import { CreatePharmacyDto } from 'src/pharmacy/dto/create-pharmacy.dto';
 import { OpeningHourDto } from 'src/pharmacy/dto/opening-hour.dto';
 import { SignupPharmaDto } from './dto/signup/signupPharma.dto';
+import { UpdateUserDto } from './dto/user.dto/update.dto';
 
 function validateHours(hours: OpeningHourDto[] = []) {
-  for (const h of hours) {
-    if (h.opensAt === h.closesAt) {
-      throw new BadRequestException(
-        `Jour ${h.dayOfWeek} : l'ouverture et la fermeture doivent être différentes.`,
-      );
+    for (const h of hours) {
+        if (h.opensAt === h.closesAt) {
+            throw new BadRequestException(
+                `Jour ${h.dayOfWeek} : l'ouverture et la fermeture doivent être différentes.`,
+            );
+        }
     }
-  }
 
-  // Deux plages identiques le même jour violeraient la contrainte unique
-  const keys = hours.map((h) => `${h.dayOfWeek}-${h.opensAt}`);
-  if (new Set(keys).size !== keys.length) {
-    throw new BadRequestException('Plages horaires en double.');
-  }
+    // Deux plages identiques le même jour violeraient la contrainte unique
+    const keys = hours.map((h) => `${h.dayOfWeek}-${h.opensAt}`);
+    if (new Set(keys).size !== keys.length) {
+        throw new BadRequestException('Plages horaires en double.');
+    }
 }
 
 @Injectable()
@@ -30,32 +31,88 @@ export class AuthService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly jwtService: JwtService,
-    ) {}
+    ) { }
 
-  async signup(signupDto: SignupDto) {
-    const hashedPassword = await bcrypt.hash(signupDto.password, 10);
+    async signup(signupDto: SignupDto) {
+        const hashedPassword = await bcrypt.hash(signupDto.password, 10);
 
-    const user = await this.prisma.user.create({
-      data: {
-        email: signupDto.email,
-        password: hashedPassword,
-        name: signupDto.name,
-      },
-    });
+        const user = await this.prisma.user.create({
+            data: {
+                email: signupDto.email,
+                password: hashedPassword,
+                name: signupDto.name,
+                role: signupDto.role
+            },
+        });
 
-    return {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        createdAt: user.createdAt,
-    };
-  }
+        return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            createdAt: user.createdAt,
+        };
+    }
+    async updateUser(id: string, updateUserDto: UpdateUserDto) {
+        const user = await this.prisma.user.findUnique({
+            where: { id },
+        });
 
-  async signin(signinDto: SigninDto) {
+        if (!user) {
+            throw new NotFoundException("Utilisateur introuvable.");
+        }
+
+        const data: {
+            email?: string;
+            password?: string;
+            name?: string;
+            role?: UpdateUserDto["role"];
+            remember?: boolean;
+        } = {};
+
+        if (updateUserDto.email !== undefined) {
+            data.email = updateUserDto.email;
+        }
+
+        if (updateUserDto.name !== undefined) {
+            data.name = updateUserDto.name;
+        }
+
+        if (updateUserDto.role !== undefined) {
+            data.role = updateUserDto.role;
+        }
+
+        if (updateUserDto.remember !== undefined) {
+            data.remember = updateUserDto.remember;
+        }
+
+        if (updateUserDto.password) {
+            data.password = await bcrypt.hash(updateUserDto.password, 10);
+        }
+
+        try {
+            const updatedUser = await this.prisma.user.update({
+                where: { id },
+                data,
+            });
+
+            // Ne jamais retourner le mot de passe hashé.
+            const { password, ...result } = updatedUser;
+            return result;
+
+        } catch (error: any) {
+            if (error.code === "P2002") {
+                throw new ConflictException("Cette adresse email est déjà utilisée.");
+            }
+
+            throw error;
+        }
+    }
+
+    async signin(signinDto: SigninDto) {
         const user = await this.prisma.user.findUnique({
             where: {
-            email: signinDto.email,
+                email: signinDto.email,
             },
         });
 
@@ -99,10 +156,10 @@ export class AuthService {
         return users;
     }
 
-    async signupPharmacie(dtoPharma:SignupPharmaDto){
-        const { openingHours, address, city, phone, email,name, } = dtoPharma;
+    async signupPharmacie(dtoPharma: SignupPharmaDto) {
+        const { openingHours, address, city, phone, email, name, role } = dtoPharma;
         validateHours(openingHours);
-        
+
         const hashedPassword = await bcrypt.hash(dtoPharma.password, 10);
 
         const user = await this.prisma.user.create({
@@ -110,6 +167,7 @@ export class AuthService {
                 email: dtoPharma.email,
                 password: hashedPassword,
                 name: dtoPharma.name,
+                role: role
             },
         });
 
@@ -121,12 +179,12 @@ export class AuthService {
                 name,
                 phone,
                 openingHours: openingHours?.length
-                ? { create: openingHours }
-                : undefined,
+                    ? { create: openingHours }
+                    : undefined,
             },
             include: { openingHours: true },
-        }); 
-        
+        });
+
         return {
             id: user.id,
             email: user.email,
@@ -136,6 +194,6 @@ export class AuthService {
             phone: pharma.phone,
             city: pharma.city,
             createdAt: user.createdAt,
-        };   
+        };
     }
 }

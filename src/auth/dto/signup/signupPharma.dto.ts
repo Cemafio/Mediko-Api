@@ -1,6 +1,7 @@
 
 import { Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsEmail, IsIn, IsLatitude, IsLongitude, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { Role } from 'generated/prisma/enums';
 import { OpeningHourDto } from 'src/pharmacy/dto/opening-hour.dto';
 
 export class SignupPharmaDto {
@@ -12,6 +13,9 @@ export class SignupPharmaDto {
 
   @IsString()
   name: string;
+
+  @IsString()
+  role:Role;
 
   @IsOptional()
   @IsBoolean()
